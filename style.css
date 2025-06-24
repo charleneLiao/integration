@@ -1,0 +1,43 @@
+body {
+      font-family: sans-serif;
+      padding: 2em;
+      background: #eef1f5;
+    }
+    button {
+      padding: 0.6em 1.2em;
+      font-size: 1em;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 1em;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 1em;
+      margin-bottom: 1em;
+    }
+    .card h3 {
+      margin: 0 0 0.3em;
+      color: #333;
+    }
+    .card p {
+      margin: 0.2em 0;
+      color: #666;
+    }
+    .loading {
+      font-size: 1.2em;
+      color: #888;
+      text-align: center;
+      padding: 2em 0;
+    }
+     .fade-in {
+      opacity: 0;
+      transition: opacity 0.8s ease-in;
+    }
+    .fade-in.show {
+      opacity: 1;
+    }

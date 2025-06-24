@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8">
+    <title>四頁 Tab 引擎</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body class="p-5">
+
+    <h2 class="mb-4">🌟 引擎頁籤範例</h2>
+
+    <!-- Tabs 選單 -->
+    <ul class="nav nav-tabs" id="engineTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab1-tab" data-bs-toggle="tab"
+          data-bs-target="#tab1" type="button" role="tab">文章介接</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab2-tab" data-bs-toggle="tab"
+          data-bs-target="#tab2" type="button" role="tab">用戶介接</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab3-tab" data-bs-toggle="tab"
+          data-bs-target="#tab3" type="button" role="tab">圖片介接</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab4-tab" data-bs-toggle="tab"
+          data-bs-target="#tab4" type="button" role="tab">台北景點</button>
+      </li>
+    </ul>
+
+    <!-- Tabs 內容 -->
+    <div class="tab-content mt-3" id="engineTabContent">
+      <div class="tab-pane fade show active" id="tab1" role="tabpanel">
+        <p>
+          <h1>這裡是文章抓取介接</h1>
+          <div id="postList"></div>
+        </p>
+      </div>
+      <div class="tab-pane fade" id="tab2" role="tabpanel">
+        <p>
+          <h1>👤 使用者卡片練習:點了把用戶資料渲染出來</h1>
+          <button onclick="loadUsers()">載入使用者資料</button>
+          <div id="userContainer"></div>
+        </p>
+      </div>
+      <div class="tab-pane fade" id="tab3" role="tabpanel">
+        <p>
+          <h2 class="mb-4">🖼 圖片淡入介接:圖片loading再渲染</h2>
+          <button class="btn btn-primary mb-3"
+            onclick="loadPhotos()">載入圖片</button>
+
+          <div id="photoContainer" class="row g-3"></div>
+        </div>
+        <div class="tab-pane fade" id="tab4" role="tabpanel">
+          <p>
+            <h2 class="mb-4">🏞 台北景點卡片api 介接</h2>
+            <div id="spotContainer" class="row g-3"></div>
+          </p>
+        </div>
+      </div>
+
+      <!-- Bootstrap JS -->
+      <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+      <script>
+    //文章抓取介接: 發出 GET 請求去抓文章
+    async function fetchPosts() {
+      const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+      const posts = await response.json();
+
+      const postList = document.getElementById('postList');
+      posts.slice(0, 5).forEach(post => {
+        const div = document.createElement('div');
+        div.className = 'post';
+        div.innerHTML = `
+          <h2>${post.title}</h2>
+          <p>${post.body}</p>
+        `;
+        postList.appendChild(div);
+      });
+    }
+
+    fetchPosts();
+
+    // 使用者卡片練習
+     async function loadUsers() {
+      const res = await fetch('https://jsonplaceholder.typicode.com/users');
+      const users = await res.json();
+
+      const container = document.getElementById('userContainer');
+      container.innerHTML = ''; // 清空舊資料
+
+      users.forEach(user => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h3>${user.name} (@${user.username})</h3>
+          <p>📧 ${user.email}</p>
+          <p>📞 ${user.phone}</p>
+          <p>🏢 ${user.company.name}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
+    // 圖片資料
+   async function loadPhotos() {
+      const container = document.getElementById('photoContainer');
+
+      // 顯示 loading spinner
+      container.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center py-5 w-100">
+          <div class="spinner-border text-primary me-2" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <strong>圖片載入中，請稍候...</strong>
+        </div>
+      `;
+
+      try {
+        const res = await fetch('https://jsonplaceholder.typicode.com/photos?_limit=10');
+        const photos = await res.json();
+
+        // 預先載入所有圖片
+        const imagePromises = photos.map(photo => {
+          return new Promise(resolve => {
+            const img = new Image();
+            img.src = `https://picsum.photos/300/200?random=${photo.id}`;
+            img.onload = () => resolve({ ...photo, imgSrc: img.src });
+            img.onerror = () => resolve({ ...photo, imgSrc: '' }); // 保證 resolve，避免卡住
+          });
+        });
+
+        const loadedPhotos = await Promise.all(imagePromises);
+
+        // 組出所有 DOM 元素
+        const content = document.createDocumentFragment();
+
+        loadedPhotos.forEach(photo => {
+          const col = document.createElement('div');
+          col.className = 'col-md-3 fade-in';
+
+          col.innerHTML = `
+            <div class="card">
+              <img src="${photo.imgSrc}" class="card-img-top" alt="圖片縮圖">
+              <div class="card-body">
+                <p class="card-text">${photo.title}</p>
+              </div>
+            </div>
+          `;
+
+          content.appendChild(col);
+        });
+
+        // 換掉 spinner，插入卡片
+        container.innerHTML = '';
+        container.appendChild(content);
+
+        // 加上淡入效果
+        requestAnimationFrame(() => {
+          document.querySelectorAll('.fade-in').forEach(el => {
+            el.classList.add('show');
+          });
+        });
+
+      } catch (error) {
+        container.innerHTML = `
+          <div class="alert alert-danger text-center" role="alert">
+            😢 圖片載入失敗，請稍後再試。
+          </div>
+        `;
+        console.error(error);
+      }
+    }
+
+    // 台北景點
+    async function loadSpots() {
+      const container = document.getElementById('spotContainer');
+      container.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center py-5 w-100">
+          <div class="spinner-border text-primary me-2" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <strong>景點載入中...</strong>
+        </div>
+      `;
+
+      try {
+        const res = await fetch('https://tdx.transportdata.tw/api/basic/v2/Tourism/ScenicSpot/Taipei?$format=JSON');
+        const spots = await res.json();
+
+        const filtered = spots.filter(s => s.Picture?.PictureUrl1).slice(0, 10);
+        const content = document.createDocumentFragment();
+
+        for (const spot of filtered) {
+          const col = document.createElement('div');
+          col.className = 'col-md-4 fade-in';
+
+          col.innerHTML = `
+            <div class="card h-100">
+              <img src="${spot.Picture.PictureUrl1}" class="card-img-top" alt="${spot.ScenicSpotName}">
+              <div class="card-body">
+                <h5 class="card-title">${spot.ScenicSpotName}</h5>
+                <p class="card-text text-truncate">${spot.Description || '無簡介'}</p>
+                <p class="text-muted small">${spot.Address || ''}</p>
+              </div>
+            </div>
+          `;
+
+          content.appendChild(col);
+        }
+
+        container.innerHTML = '';
+        container.appendChild(content);
+
+        requestAnimationFrame(() => {
+          document.querySelectorAll('.fade-in').forEach(el => el.classList.add('show'));
+        });
+
+      } catch (err) {
+        container.innerHTML = `
+          <div class="alert alert-danger text-center" role="alert">
+            😢 景點載入失敗，請稍後再試。
+          </div>
+        `;
+        console.error(err);
+      }
+    }
+
+    // ✅ 頁面一載入就執行
+    window.addEventListener('DOMContentLoaded', loadSpots);
+  </script>
+    </body>
+  </html>
